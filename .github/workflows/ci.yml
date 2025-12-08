@@ -60,14 +60,14 @@ jobs:
           context: .
           file: ./Dockerfile
           push: false
-          tags: patient-management:${{ github.sha }}
+          tags: patient-management-devops-app:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       
       - name: Test Docker image
         run: |
-          docker build -t patient-management:test .
-          docker run -d -p 3000:3000 -p 8000:8000 --name test-container patient-management:test
+          docker build -t patient-management-devops-app:test .
+          docker run -d -p 3000:3000 -p 8000:8000 --name test-container patient-management-devops-app:test
           sleep 10
           curl -f http://localhost:3000/health || exit 1
           docker stop test-container
