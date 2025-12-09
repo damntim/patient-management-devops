@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: patient-management-app
+    container_name: patient-management-devops-app
     ports:
       - "3001:3000"  # Backend API
       - "8000:8000"  # Frontend PHP
