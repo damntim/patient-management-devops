@@ -15,9 +15,11 @@ try {
 
 module.exports = {
   ...base,
-  testEnvironment: base.testEnvironment || 'node',
+  rootDir: base.rootDir || __dirname,        // ensure coverage is under backend/
   collectCoverage: true,
-  coverageReporters: ['lcov', 'text-summary'],
+  coverageDirectory: './coverage',            // write to backend/coverage
+  coverageReporters: ['lcov', 'text'],        // ensure lcov.info is generated
+  testEnvironment: base.testEnvironment || 'node',
   coverageThreshold: {
     global: {
       statements: 65,
