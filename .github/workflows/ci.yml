@@ -57,7 +57,6 @@ jobs:
       - name: Enforce minimum coverage thresholds
         working-directory: ./backend
         run: |
-          echo "Checking coverage thresholds..."
           npm test -- --coverageReporters=text-summary
 
   ###############################################################
