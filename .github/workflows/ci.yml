@@ -36,7 +36,7 @@ jobs:
 
       - name: Run tests with coverage
         working-directory: ./backend
-        run: npm test -- --coverage
+        run: npm test -- --coverage --config ./jest.ci.config.js
 
       - name: Verify coverage file
         working-directory: ./backend
@@ -65,7 +65,7 @@ jobs:
         working-directory: ./backend
         run: |
           echo "Checking coverage thresholds..."
-          npm test -- --coverage --coverageReporters=text-summary
+          npm test -- --coverage --coverageReporters=text-summary --config ./jest.ci.config.js
 
 
   ###############################################################
