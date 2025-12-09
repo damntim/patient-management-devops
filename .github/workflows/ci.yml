@@ -54,13 +54,6 @@ jobs:
           path: backend/coverage/
           if-no-files-found: error
 
-      - name: Comment coverage on PR
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        uses: romeovs/lcov-reporter-action@v0.3.1
-        with:
-          lcov-file: ./backend/coverage/lcov.info
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Enforce minimum coverage thresholds
         working-directory: ./backend
         run: |
