@@ -216,8 +216,7 @@ jobs:
           docker build -t patient-management:test .
           docker run -d -p 3000:3000 --name test-container patient-management:test
           echo "Waiting for container to start..."
-          # Consider reducing sleep if your app starts faster
-          sleep 10
+          sleep 100
           curl -f http://localhost:3000/health || (echo "❌ Health endpoint failed!" && exit 1)
           echo "✅ Health check passed"
           docker stop test-container
@@ -261,6 +260,7 @@ jobs:
           echo "======================"
 
       - name: Slack Notification (if configured)
+        if: always()
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
