@@ -55,7 +55,7 @@ jobs:
           if-no-files-found: error
 
       - name: Comment coverage on PR
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: romeovs/lcov-reporter-action@v0.3.1
         with:
           lcov-file: ./backend/coverage/lcov.info
@@ -216,7 +216,8 @@ jobs:
           docker build -t patient-management:test .
           docker run -d -p 3000:3000 --name test-container patient-management:test
           echo "Waiting for container to start..."
-          sleep 100
+          # Consider reducing sleep if your app starts faster
+          sleep 10
           curl -f http://localhost:3000/health || (echo "❌ Health endpoint failed!" && exit 1)
           echo "✅ Health check passed"
           docker stop test-container
@@ -260,7 +261,6 @@ jobs:
           echo "======================"
 
       - name: Slack Notification (if configured)
-        if: always()
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
