@@ -48,7 +48,6 @@ jobs:
       - name: Check coverage thresholds
         working-directory: ./backend
         run: |
-          echo "Checking test coverage thresholds..."
           npm test -- --coverage --coverageReporters=text-summary
 
   # Job 2: Build Docker image
