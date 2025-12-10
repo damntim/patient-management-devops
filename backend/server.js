@@ -1,0 +1,175 @@
+// backend/server.js
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const db = require('./database');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// Get all patients
+app.get('/api/patients', (req, res) => {
+  db.getAllPatients((err, patients) => {
+    if (err) {
+      console.error('Error fetching patients:', err);
+      return res.status(500).json({ error: 'Failed to fetch patients' });
+    }
+    res.json({ success: true, data: patients, count: patients.length });
+  });
+});
+
+// Get single patient by ID
+app.get('/api/patients/:id', (req, res) => {
+  const { id } = req.params;
+  
+  db.getPatientById(id, (err, patient) => {
+    if (err) {
+      console.error('Error fetching patient:', err);
+      return res.status(500).json({ error: 'Failed to fetch patient' });
+    }
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+    res.json({ success: true, data: patient });
+  });
+});
+
+// Create new patient
+app.post('/api/patients', (req, res) => {
+  const { name, age, gender, contact } = req.body;
+  
+  // Validation
+  if (!name || !age || !gender || !contact) {
+    return res.status(400).json({ 
+      error: 'All fields are required: name, age, gender, contact' 
+    });
+  }
+
+  if (age < 0 || age > 150) {
+    return res.status(400).json({ error: 'Invalid age' });
+  }
+
+  const patient = { name, age, gender, contact };
+  
+  db.createPatient(patient, (err, id) => {
+    if (err) {
+      console.error('Error creating patient:', err);
+      return res.status(500).json({ error: 'Failed to create patient' });
+    }
+    res.status(201).json({ 
+      success: true, 
+      message: 'Patient created successfully',
+      data: { id, ...patient }
+    });
+  });
+});
+
+// Update patient
+app.put('/api/patients/:id', (req, res) => {
+  const { id } = req.params;
+  const { name, age, gender, contact } = req.body;
+  
+  // Validation
+  if (!name || !age || !gender || !contact) {
+    return res.status(400).json({ 
+      error: 'All fields are required: name, age, gender, contact' 
+    });
+  }
+
+  if (age < 0 || age > 150) {
+    return res.status(400).json({ error: 'Invalid age' });
+  }
+
+  const patient = { name, age, gender, contact };
+  
+  db.updatePatient(id, patient, (err, changes) => {
+    if (err) {
+      console.error('Error updating patient:', err);
+      return res.status(500).json({ error: 'Failed to update patient' });
+    }
+    if (changes === 0) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+    res.json({ 
+      success: true, 
+      message: 'Patient updated successfully',
+      data: { id, ...patient }
+    });
+  });
+});
+
+// Delete patient
+app.delete('/api/patients/:id', (req, res) => {
+  const { id } = req.params;
+  
+  db.deletePatient(id, (err, changes) => {
+    if (err) {
+      console.error('Error deleting patient:', err);
+      return res.status(500).json({ error: 'Failed to delete patient' });
+    }
+    if (changes === 0) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+    res.json({ 
+      success: true, 
+      message: 'Patient deleted successfully' 
+    });
+  });
+});
+
+// Get statistics
+app.get('/api/stats', (req, res) => {
+  db.getStatistics((err, stats) => {
+    if (err) {
+      console.error('Error fetching statistics:', err);
+      return res.status(500).json({ error: 'Failed to fetch statistics' });
+    }
+    res.json({ success: true, data: stats });
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+// Start server
+if (require.main === module) {
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, closing server...');
+    server.close(() => {
+      console.log('Server closed');
+      db.close();
+      process.exit(0);
+    });
+  });
+}
+
+// Export the app for testing or other uses
+module.exports = app;
