@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: patient-management-config
+  labels:
+    app: patient-management
+data:
+  APP_NAME: "Patient Management System"
+  APP_VERSION: "1.0.0"
+  NODE_ENV: "production"
+  PORT: "3000"
+  LOG_LEVEL: "info"
+  DATABASE_PATH: "/app/backend/data/patients.db"

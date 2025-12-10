@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: patient-management-green
+  labels:
+    app: patient-management
+    version: green
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: patient-management
+      version: green
+  template:
+    metadata:
+      labels:
+        app: patient-management
+        version: green
+    spec:
+      containers:
+      - name: patient-management
+        image: damntime/patient-management:v1.0.1  # New version
+        # ... rest same as deployment.yaml
+        
