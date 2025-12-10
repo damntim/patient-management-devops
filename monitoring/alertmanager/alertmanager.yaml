@@ -1,0 +1,26 @@
+route:
+  group_by: ["alertname", "cluster", "service"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 2h
+  receiver: slack-notifications
+  routes:
+    - matchers:
+        - severity="critical"
+      receiver: slack-notifications
+    - matchers:
+        - action="scale_up_recommendation"
+      receiver: autoscale-webhook
+
+receivers:
+  - name: slack-notifications
+    slack_configs:
+      - api_url: "REPLACE_WITH_SLACK_WEBHOOK_URL"
+        channel: "#alerts"
+        title: "{{ .CommonAnnotations.summary }}"
+        text: "{{ .CommonAnnotations.description }}"
+        send_resolved: true
+  - name: autoscale-webhook
+    webhook_configs:
+      - url: "https://example.com/scale-recommendation"
+        send_resolved: true

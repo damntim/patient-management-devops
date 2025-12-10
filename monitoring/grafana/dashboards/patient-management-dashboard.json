@@ -1,0 +1,120 @@
+{
+  "title": "Patient Management - Overview",
+  "timezone": "browser",
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Availability (5m)",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "(sum(rate(http_requests_total{status!~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))) * 100",
+          "legendFormat": "Availability %"
+        }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 99.5 },
+              { "color": "green", "value": 99.9 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "graph",
+      "title": "Requests by Status (5m rate)",
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum by(status) (rate(http_requests_total[5m]))",
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "lines": true
+    },
+    {
+      "type": "stat",
+      "title": "Latency P95 (s)",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    },
+    {
+      "type": "graph",
+      "title": "CPU Usage per Pod (5m)",
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 8 },
+      "targets": [
+        {
+          "expr": "avg by(pod) (rate(container_cpu_usage_seconds_total{pod=~\"patient-management.*\"}[5m])) * 100",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "lines": true,
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "type": "graph",
+      "title": "Memory Usage per Pod",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "(container_memory_usage_bytes{pod=~\"patient-management.*\"} / container_spec_memory_limit_bytes{pod=~\"patient-management.*\"}) * 100",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "lines": true,
+      "fieldConfig": { "defaults": { "unit": "percent" } }
+    },
+    {
+      "type": "graph",
+      "title": "Container Restarts (15m rate)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "targets": [
+        {
+          "expr": "rate(kube_pod_container_status_restarts_total{pod=~\"patient-management.*\"}[15m])",
+          "legendFormat": "{{pod}}/{{container}}"
+        }
+      ],
+      "lines": true
+    },
+    {
+      "type": "stat",
+      "title": "Available Replicas",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 20 },
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_available{deployment=\"patient-management\"}",
+          "legendFormat": "available"
+        }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "type": "datasource",
+        "name": "DS_PROMETHEUS",
+        "query": "Prometheus",
+        "current": { "selected": true }
+      }
+    ]
+  }
+}

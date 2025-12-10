@@ -1,100 +1,140 @@
-groups:
-  - name: patient_management_alerts
-    interval: 30s
-    rules:
-      # High Error Rate Alert
-      - alert: HighErrorRate
-        expr: |
-          (sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 > 2
-        for: 5m
-        labels:
-          severity: critical
-          component: patient-management
-        annotations:
-          summary: "High error rate detected"
-          description: "Error rate is {{ $value }}% (threshold: 2%)"
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: patient-management-rules
+  # namespace: monitoring  # Optional: set if you want this in a specific namespace
+spec:
+  groups:
+    - name: patient_management_alerts
+      interval: 30s
+      rules:
+        # High Error Rate Alert
+        - alert: HighErrorRate
+          expr: |
+            (sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 > 2
+          for: 5m
+          labels:
+            severity: critical
+            component: patient-management
+          annotations:
+            summary: "High error rate detected"
+            description: "Error rate is {{ $value }}% (threshold: 2%)"
 
-      # High Latency Alert
-      - alert: HighLatency
-        expr: |
-          histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
-        for: 5m
-        labels:
-          severity: warning
-          component: patient-management
-        annotations:
-          summary: "High latency detected"
-          description: "95th percentile latency is {{ $value }}s (threshold: 1s)"
+        # High Latency Alert
+        - alert: HighLatency
+          expr: |
+            histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+          for: 5m
+          labels:
+            severity: warning
+            component: patient-management
+          annotations:
+            summary: "High latency detected"
+            description: "95th percentile latency is {{ $value }}s (threshold: 1s)"
 
-      # Pod Down Alert
-      - alert: PodDown
-        expr: |
-          up{job="patient-management"} == 0
-        for: 2m
-        labels:
-          severity: critical
-          component: patient-management
-        annotations:
-          summary: "Pod is down"
-          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is down"
+        # Pod Down Alert
+        - alert: PodDown
+          expr: |
+            up{job="patient-management"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            component: patient-management
+          annotations:
+            summary: "Pod is down"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is down"
 
-      # High CPU Usage Alert
-      - alert: HighCPUUsage
-        expr: |
-          rate(container_cpu_usage_seconds_total{pod=~"patient-management.*"}[5m]) * 100 > 80
-        for: 10m
-        labels:
-          severity: warning
-          component: patient-management
-        annotations:
-          summary: "High CPU usage"
-          description: "CPU usage is {{ $value }}% (threshold: 80%)"
+        # High CPU Usage Alert
+        - alert: HighCPUUsage
+          expr: |
+            rate(container_cpu_usage_seconds_total{pod=~"patient-management.*"}[5m]) * 100 > 80
+          for: 10m
+          labels:
+            severity: warning
+            component: patient-management
+          annotations:
+            summary: "High CPU usage"
+            description: "CPU usage is {{ $value }}% (threshold: 80%)"
 
-      # High Memory Usage Alert
-      - alert: HighMemoryUsage
-        expr: |
-          (container_memory_usage_bytes{pod=~"patient-management.*"} / container_spec_memory_limit_bytes{pod=~"patient-management.*"}) * 100 > 85
-        for: 5m
-        labels:
-          severity: warning
-          component: patient-management
-        annotations:
-          summary: "High memory usage"
-          description: "Memory usage is {{ $value }}% (threshold: 85%)"
+        # High Memory Usage Alert
+        - alert: HighMemoryUsage
+          expr: |
+            (container_memory_usage_bytes{pod=~"patient-management.*"} / container_spec_memory_limit_bytes{pod=~"patient-management.*"}) * 100 > 85
+          for: 5m
+          labels:
+            severity: warning
+            component: patient-management
+          annotations:
+            summary: "High memory usage"
+            description: "Memory usage is {{ $value }}% (threshold: 85%)"
 
-      # Container Restart Alert
-      - alert: ContainerRestarting
-        expr: |
-          rate(kube_pod_container_status_restarts_total{pod=~"patient-management.*"}[15m]) > 0
-        for: 5m
-        labels:
-          severity: warning
-          component: patient-management
-        annotations:
-          summary: "Container is restarting"
-          description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is restarting"
+        # Container Restart Alert
+        - alert: ContainerRestarting
+          expr: |
+            rate(kube_pod_container_status_restarts_total{pod=~"patient-management.*"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            component: patient-management
+          annotations:
+            summary: "Container is restarting"
+            description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is restarting"
 
-      # Low Replica Count Alert
-      - alert: LowReplicaCount
-        expr: |
-          kube_deployment_status_replicas_available{deployment="patient-management"} < 2
-        for: 3m
-        labels:
-          severity: critical
-          component: patient-management
-        annotations:
-          summary: "Low replica count"
-          description: "Only {{ $value }} replicas available (minimum: 2)"
+        # Low Replica Count Alert
+        - alert: LowReplicaCount
+          expr: |
+            kube_deployment_status_replicas_available{deployment="patient-management"} < 2
+          for: 3m
+          labels:
+            severity: critical
+            component: patient-management
+          annotations:
+            summary: "Low replica count"
+            description: "Only {{ $value }} replicas available (minimum: 2)"
 
-      # API Availability Alert (SLO)
-      - alert: APIAvailabilityBelowSLO
-        expr: |
-          (sum(rate(http_requests_total{status!~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 < 99.5
-        for: 10m
-        labels:
-          severity: critical
-          component: patient-management
-          slo: availability
-        annotations:
-          summary: "API availability below SLO"
-          description: "Availability is {{ $value }}% (SLO: 99.5%)"
+        # API Availability Alert (SLO)
+        - alert: APIAvailabilityBelowSLO
+          expr: |
+            (sum(rate(http_requests_total{status!~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 < 99.5
+          for: 10m
+          labels:
+            severity: critical
+            component: patient-management
+            slo: availability
+          annotations:
+            summary: "API availability below SLO"
+            description: "Availability is {{ $value }}% (SLO: 99.5%)"
+
+    - name: patient_management_autoscaling
+      interval: 30s
+      rules:
+        - record: patient_management:error_rate_percent
+          expr: (sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100
+
+        - record: patient_management:latency_p95_seconds
+          expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+
+        - record: patient_management:cpu_utilization_percent_per_pod
+          expr: avg by(pod) (rate(container_cpu_usage_seconds_total{pod=~"patient-management.*"}[5m])) * 100
+
+        - alert: ScaleUpRecommended
+          expr: (patient_management:latency_p95_seconds > 1) and (avg_over_time(patient_management:cpu_utilization_percent_per_pod[5m]) > 70)
+          for: 5m
+          labels:
+            severity: info
+            component: patient-management
+            action: scale_up_recommendation
+          annotations:
+            summary: "Scale up recommended"
+            description: "Latency P95 > 1s and CPU > 70% for 5m. Consider increasing replicas."
+
+        - alert: ScaleDownRecommended
+          expr: (patient_management:latency_p95_seconds < 0.3) and (avg_over_time(patient_management:cpu_utilization_percent_per_pod[10m]) < 30)
+          for: 10m
+          labels:
+            severity: info
+            component: patient-management
+            action: scale_down_recommendation
+          annotations:
+            summary: "Scale down recommended"
+            description: "Latency P95 < 300ms and CPU < 30% for 10m. Consider reducing replicas."
